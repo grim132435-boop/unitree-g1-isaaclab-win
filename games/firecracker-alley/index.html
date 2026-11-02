@@ -134,6 +134,21 @@ canvas {
   #app.two .bombBtn { width: 84px; height: 84px; font-size: 22px; }
 
 }
+#app.net #stats { display: none; }
+#app.net #hud { justify-content: center; }
+#netPanel { display: grid; gap: 10px; }
+.joinRow { display: flex; gap: 8px; }
+.joinRow input {
+  flex: 1; min-width: 0; padding: 12px 14px; border-radius: 14px; border: 2px solid #3a3166;
+  background: rgba(255,255,255,.04); color: var(--paper); font-family: var(--display); font-size: 22px;
+  letter-spacing: .25em; text-align: center; user-select: text; -webkit-user-select: text;
+}
+.joinRow input:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.joinRow .btn { width: auto; padding: 12px 20px; flex: none; }
+.netMsg { min-height: 1.5em; font-size: 14px; }
+.eyebrow { margin: 0; font-size: 12px; letter-spacing: .18em; color: var(--muted); }
+.card .code { margin: 0; font-family: var(--display); font-size: 68px; line-height: 1; letter-spacing: .14em; color: var(--gold); font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(255,201,74,.3); user-select: text; -webkit-user-select: text; }
+.btn:disabled { opacity: .4; cursor: default; }
 .seg.mode button { max-width: none; display: grid; gap: 2px; padding: 10px 6px; font-size: 18px; }
 .seg.mode button small { font-family: var(--body); font-size: 12px; color: var(--muted); }
 .bombBtn small { display: block; font-family: var(--body); font-size: 11px; opacity: .85; margin-top: 2px; }
@@ -198,7 +213,8 @@ canvas {
       <p>야시장 골목에 폭죽을 놓고 상자를 부수세요.<br>불꽃을 피해 마지막까지 살아남으면 승리!</p>
       <div class="seg mode" id="mode">
         <button type="button" id="m1" data-m="1" aria-pressed="true">혼자 하기<small>정혁 vs 봇 3명</small></button>
-        <button type="button" id="m2" data-m="2" aria-pressed="false">둘이 하기<small>정혁 vs 해미</small></button>
+        <button type="button" id="m2" data-m="2" aria-pressed="false">한 폰 대전<small>정혁 vs 해미</small></button>
+        <button type="button" id="m3" data-m="3" aria-pressed="false">온라인<small>각자 폰으로</small></button>
       </div>
       <div class="howto">
         <div id="hint2" hidden><i style="background:#ff7ab8">2</i>폰을 가운데 눕혀 두고 마주 앉으세요. 아래쪽 조작은 정혁, 뒤집힌 위쪽 조작은 해미예요.</div>
@@ -213,8 +229,27 @@ canvas {
         <button type="button" id="d1" data-d="1" aria-pressed="true">보통</button>
         <button type="button" id="d2" data-d="2" aria-pressed="false">어려움</button>
       </div>
+      <div id="netPanel" hidden>
+        <div class="seg" id="nameSeg">
+          <button type="button" id="nmJ" data-n="정혁" aria-pressed="true">나는 정혁</button>
+          <button type="button" id="nmH" data-n="해미" aria-pressed="false">나는 해미</button>
+        </div>
+        <button class="btn" id="hostBtn" type="button">방 만들기</button>
+        <div class="joinRow">
+          <input id="codeIn" type="text" inputmode="numeric" maxlength="4" placeholder="코드 4자리" autocomplete="off" aria-label="방 코드">
+          <button class="btn ghost" id="joinBtn" type="button">들어가기</button>
+        </div>
+        <p class="netMsg" id="netMsg"></p>
+      </div>
       <button class="btn" id="startBtn" type="button">게임 시작</button>
       <div class="record" id="record">PC에서는 방향키/WASD로 이동, 스페이스로 폭죽</div>
+    </div>
+    <div class="card" id="lobbyCard" hidden>
+      <p class="eyebrow">방 코드</p>
+      <p class="code" id="lobbyCode">0000</p>
+      <p id="lobbyMsg">상대에게 이 코드를 알려주세요.</p>
+      <button class="btn" id="netStartBtn" type="button" disabled>시작</button>
+      <button class="btn ghost" id="netLeaveBtn" type="button">나가기</button>
     </div>
     <div class="card" id="endCard" hidden>
       <p class="result" id="resTitle">승리!</p>
@@ -222,6 +257,7 @@ canvas {
       <button class="btn" id="againBtn" type="button">한 판 더</button>
       <button class="btn ghost" id="menuBtn" type="button">처음 화면</button>
       <div class="record" id="record2"></div>
+      <p class="record" id="endNote" hidden></p>
     </div>
   </div>
 </div>
@@ -268,7 +304,7 @@ let rec = { w: 0, l: 0, d: 0 }, vs = { j: 0, h: 0, d: 0 };
 try { const s = JSON.parse(localStorage.getItem('fa-record') || 'null'); if (s) rec = s; } catch (e) {}
 try { const s = JSON.parse(localStorage.getItem('fa-vs') || 'null'); if (s) vs = s; } catch (e) {}
 try { const v = localStorage.getItem('fa-diff'); const d = +v; if (v !== null && d >= 0 && d <= 2) diff = d; } catch (e) {}
-try { if (localStorage.getItem('fa-mode') === '2') mode = 2; } catch (e) {}
+try { const m = localStorage.getItem('fa-mode'); if (m === '2' || m === '3') mode = +m; } catch (e) {}
 function saveRec() { try { localStorage.setItem('fa-record', JSON.stringify(rec)); localStorage.setItem('fa-vs', JSON.stringify(vs)); } catch (e) {} }
 function recText() {
   return mode === 2 ? `정혁 ${vs.j} : ${vs.h} 해미${vs.d ? ` (무승부 ${vs.d})` : ''}` : `혼자 하기 전적 ${rec.w}승 ${rec.l}패 ${rec.d}무`;
@@ -305,7 +341,7 @@ function newGame() {
     if (x % 2 === 1 && y % 2 === 1) grid[idx(x, y)] = WALL;
     else if (Math.random() < 0.74) grid[idx(x, y)] = CRATE;
   }
-  const SPAWNS = mode === 2 ? SPAWNS2 : SPAWNS1;
+  const SPAWNS = mode === 1 ? SPAWNS1 : SPAWNS2;
   for (const [sx, sy] of SPAWNS) {
     for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2]]) {
       const x = sx + dx, y = sy + dy;
@@ -315,8 +351,9 @@ function newGame() {
   }
   const cfg = DIFF[diff];
   players = SPAWNS.map(([x, y], i) => ({
-    id: i, ...(mode === 2 && i === 1 ? HAEMI : ROSTER[i]), ai: mode === 1 && i > 0, ctl: mode === 2 ? i : (i === 0 ? 0 : -1),
-    tx: x, ty: y, fx: x, fy: y, t: 1, moving: false, mdir: 2, face: mode === 2 ? (i === 0 ? 0 : 2) : 2, dir: -1,
+    id: i, ...(mode !== 1 && i === 1 ? HAEMI : ROSTER[i]), ai: mode === 1 && i > 0, ctl: mode === 2 ? i : (i === 0 ? 0 : -1),
+    me: mode === 2 || i === 0,
+    tx: x, ty: y, fx: x, fy: y, t: 1, moving: false, mdir: 2, face: mode !== 1 ? (i === 0 ? 0 : 2) : 2, dir: -1,
     speed: 3.3, spd: 1, maxB: 1, range: 2, active: 0, alive: true, deadT: 0, cd: rand(0.2, 0.6), react: cfg.react
   }));
   buildChips();
@@ -333,8 +370,9 @@ function tryMove(p, d) {
   return true;
 }
 
-function setHumanDir(c, d) {
-  const p = players.find(q => q.ctl === c); if (!p || !p.alive) return;
+function setHumanDir(c, d) { const p = players.find(q => q.ctl === c); if (p) setPDir(p, d); }
+function setPDir(p, d) {
+  if (!p.alive) return;
   p.dir = d;
   if (d >= 0 && p.moving && d === (p.mdir + 2) % 4) {
     [p.fx, p.tx] = [p.tx, p.fx]; [p.fy, p.ty] = [p.ty, p.fy];
@@ -567,7 +605,7 @@ function update(dt) {
   }
 
   if (!ending) {
-    if (mode === 2) {
+    if (mode !== 1) {
       // 누가 쓰러지면 잠깐 기다렸다가 판정 (동시에 쓰러지면 무승부)
       if (!players[0].alive || !players[1].alive) ending = { res: 'vs', t: 1.2 };
       else if (timeLeft <= 0) { timeLeft = 0; ending = { res: 'vs', t: 0.4 }; }
@@ -713,7 +751,7 @@ function drawPlayer(p) {
     for (const s of [-1, 1]) { ellipse(ex + s * r * .5, ey + r * .3, r * .12, r * .07); ctx.fill(); }
   }
   ctx.restore();
-  if (!p.ai && p.alive) {
+  if (p.me && p.alive) {
     const my = Math.max(S * .04, py - S * .62) + Math.sin(clock * 5) * S * .04;
     ctx.fillStyle = C.paper; ctx.beginPath(); ctx.moveTo(px - S * .1, my); ctx.lineTo(px + S * .1, my); ctx.lineTo(px, my + S * .12); ctx.closePath(); ctx.fill();
   }
@@ -756,7 +794,7 @@ function buildChips() {
   const key = players.map(p => [p.alive, p.range, p.maxB, p.spd].join()).join('|') + mode;
   if (key === chipKey) return; chipKey = key;
   chipsEl.innerHTML = players.map(p => `<span class="chip${p.alive ? '' : ' out'}"><i style="background:${p.color}"></i>${p.name}` +
-    (mode === 2 ? ` <small>불${p.range} 탄${p.maxB} 발${p.spd}</small>` : '') + `</span>`).join('');
+    (mode !== 1 ? ` <small>불${p.range} 탄${p.maxB} 발${p.spd}</small>` : '') + `</span>`).join('');
 }
 let hudT = 0;
 function hud(dt) {
@@ -782,6 +820,8 @@ const endCardEl = document.getElementById('endCard');
 function finish(res) {
   running = false; ending = null;
   const T = document.getElementById('resTitle'), sub = document.getElementById('resSub');
+  if (mode === 3) { netFinish(res); return; }
+  againBtn.hidden = false; endNote.hidden = true; menuBtn.textContent = '처음 화면';
   if (mode === 2) {
     if (res === 'j') vs.j++; else if (res === 'h') vs.h++; else vs.d++;
     T.className = 'result ' + (res === 'draw' ? 'draw' : 'win');
@@ -803,7 +843,8 @@ function finish(res) {
   menu.hidden = true; endCard.hidden = false; overlay.hidden = false;
 }
 function showMenu() {
-  running = false; endCard.hidden = true; menu.hidden = false; overlay.hidden = false;
+  running = false; endCard.hidden = true; lobbyCard.hidden = true; menu.hidden = false; overlay.hidden = false;
+  if (mode === 3) { recordEl.textContent = '둘 다 claude.ai에 로그인한 채로 이 페이지를 열고, 한 명이 방을 만들어 코드를 알려주세요.'; return; }
   const keys = mode === 2 ? 'PC: 정혁 WASD + 스페이스, 해미 방향키 + 엔터' : 'PC: 방향키/WASD로 이동, 스페이스로 폭죽';
   const has = mode === 2 ? vs.j + vs.h + vs.d : rec.w + rec.l + rec.d;
   recordEl.textContent = has ? recText() + ' · ' + keys : keys;
@@ -813,18 +854,24 @@ const modeBtns = [...document.querySelectorAll('#mode button')];
 function setMode(m) {
   mode = m;
   modeBtns.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.m === m)));
+  if (net) netLeave();
   appEl.classList.toggle('two', m === 2);
+  appEl.classList.toggle('net', m === 3);
+  document.getElementById('netPanel').hidden = m !== 3;
+  document.getElementById('startBtn').hidden = m === 3;
   document.getElementById('dpad2').hidden = m !== 2;
   document.getElementById('bombBtn2').hidden = m !== 2;
-  document.getElementById('diff').hidden = m === 2;
+  document.getElementById('diff').hidden = m !== 1;
   document.getElementById('hint2').hidden = m !== 2;
   try { localStorage.setItem('fa-mode', String(m)); } catch (e) {}
   if (!running) { newGame(); placeBomb(players[1]); resize(); showMenu(); }
 }
 modeBtns.forEach(b => b.addEventListener('click', () => setMode(+b.dataset.m)));
 document.getElementById('startBtn').addEventListener('click', start);
-document.getElementById('againBtn').addEventListener('click', start);
-document.getElementById('menuBtn').addEventListener('click', showMenu);
+const againBtn = document.getElementById('againBtn'), menuBtn = document.getElementById('menuBtn'), endNote = document.getElementById('endNote');
+const lobbyCard = document.getElementById('lobbyCard');
+againBtn.addEventListener('click', () => (mode === 3 ? netStartRound() : start()));
+menuBtn.addEventListener('click', () => { netLeave(); setMode(mode); });
 const diffBtns = [...document.querySelectorAll('#diff button')];
 function setDiff(d) { diff = d; diffBtns.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.d === d))); try { localStorage.setItem('fa-diff', String(d)); } catch (e) {} }
 diffBtns.forEach(b => b.addEventListener('click', () => setDiff(+b.dataset.d)));
@@ -839,9 +886,13 @@ const ctls = [0, 1].map(c => {
 function applyDir(ct) {
   const d = ct.padDir >= 0 ? ct.padDir : (ct.keys.length ? ct.keys[ct.keys.length - 1] : -1);
   ct.arrows.forEach((a, k) => a.classList.toggle('on', k === d));
+  if (net && net.role === 'guest') { if (ct.c === 0 && d !== net.dir) { net.dir = d; netGuestSend(); } return; }
   if (running) setHumanDir(ct.c, d);
 }
-function humanBomb(c) { const p = players.find(q => q.ctl === c); if (running && p) placeBomb(p); }
+function humanBomb(c) {
+  if (net && net.role === 'guest') { if (c === 0 && net.phase === 'play' && !net.spect) { net.bs++; netGuestSend(); } return; }
+  const p = players.find(q => q.ctl === c); if (running && p) placeBomb(p);
+}
 for (const ct of ctls) {
   const { pad, knob, btn } = ct;
   const padMove = e => {
@@ -875,7 +926,7 @@ function keyTarget(code) {
 addEventListener('keydown', e => {
   const t = keyTarget(e.code);
   if (t) { e.preventDefault(); const ct = ctls[t[0]]; if (!ct.keys.includes(t[1])) ct.keys.push(t[1]); applyDir(ct); return; }
-  if (!running) return;
+  if (!running && !(net && net.role === 'guest')) return;
   if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) humanBomb(0); }
   else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); if (!e.repeat) humanBomb(mode === 2 ? 1 : 0); }
 });
@@ -886,10 +937,272 @@ document.addEventListener('contextmenu', e => e.preventDefault());
 addEventListener('resize', resize);
 if (window.ResizeObserver) new ResizeObserver(resize).observe(boardEl);
 
+
+// ---------- 온라인 대전 ----------
+// room 캐퍼빌리티의 presence만 씀: 방장 폰이 게임을 돌리고 상태를 presence로 내보내고,
+// 손님 폰은 방향/폭죽 입력을 presence로 보낸 뒤 방장의 상태를 그대로 그린다.
+let roomNs = null, roomChecked = false, net = null;
+let myName = '정혁';
+try { const n = localStorage.getItem('fa-name'); if (n === '정혁' || n === '해미') myName = n; } catch (e) {}
+const netMsg = document.getElementById('netMsg'), hostBtn = document.getElementById('hostBtn'), joinBtn = document.getElementById('joinBtn');
+const codeIn = document.getElementById('codeIn'), lobbyCode = document.getElementById('lobbyCode'), lobbyMsg = document.getElementById('lobbyMsg');
+const netStartBtn = document.getElementById('netStartBtn'), netLeaveBtn = document.getElementById('netLeaveBtn');
+const nameBtns = [...document.querySelectorAll('#nameSeg button')];
+
+function setName(n) {
+  myName = n; nameBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === n)));
+  try { localStorage.setItem('fa-name', n); } catch (e) {}
+}
+nameBtns.forEach(b => b.addEventListener('click', () => setName(b.dataset.n)));
+setName(myName);
+
+function updNetAvail() {
+  const ok = !!roomNs;
+  hostBtn.disabled = joinBtn.disabled = !ok;
+  netMsg.textContent = !roomChecked ? '온라인 연결을 확인하는 중…'
+    : ok ? '한 명이 방을 만들고, 다른 한 명이 코드로 들어오세요.'
+    : '여기서는 온라인 대전을 열 수 없어요. claude.ai에 로그인한 상태로 이 페이지를 열어 주세요.';
+}
+updNetAvail();
+(window.claude && typeof window.claude.use === 'function' ? window.claude.use('room') : Promise.resolve(null))
+  .then(r => { roomNs = r; }, () => { roomNs = null; })
+  .then(() => { roomChecked = true; updNetAvail(); });
+
+function cleanName(v) { return typeof v === 'string' ? v.replace(/[^\p{L}\p{N} ]/gu, '').slice(0, 8) : ''; }
+function look(name, k, other) {
+  const base = name === '해미' ? HAEMI : ROSTER[0];
+  const pick = k === 1 && name === other ? (name === '해미' ? ROSTER[3] : ROSTER[1]) : base;
+  return { ...pick, name: name || (k ? '손님' : '방장') };
+}
+
+async function netOpen(role, code) {
+  audioInit();
+  hostBtn.disabled = joinBtn.disabled = true;
+  netMsg.textContent = '연결하는 중…';
+  try {
+    const r = await roomNs.join('fa-' + code);
+    const now = performance.now();
+    net = { role, r, code, phase: 'lobby', rd: 0, res: '', gp: null, myPeer: null, lastSeen: now, joinedAt: now,
+      sc: [0, 0, 0], dir: -1, bs: 0, gdir: -1, gbs: 0, lastGuestBs: 0, sendT: 0, names: role === 'host' ? [myName, ''] : ['', myName],
+      lost: false, spect: false, nBombs: 0, statSum: 0 };
+    if (role === 'guest') netGuestSend(); else netSend(true, now);
+    menu.hidden = true; endCard.hidden = true; lobbyCard.hidden = false; overlay.hidden = false;
+    lobbyCode.textContent = code;
+    netStartBtn.hidden = role !== 'host'; netStartBtn.disabled = true;
+    lobbyMsg.textContent = role === 'host' ? '상대에게 이 코드를 알려주세요. 들어오면 시작할 수 있어요.' : '방에 들어가는 중…';
+  } catch (e) {
+    netMsg.textContent = '연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.';
+    hostBtn.disabled = joinBtn.disabled = false;
+  }
+}
+hostBtn.addEventListener('click', () => { if (roomNs) netOpen('host', String(1000 + Math.floor(Math.random() * 9000))); });
+joinBtn.addEventListener('click', () => {
+  const code = codeIn.value.replace(/\D/g, '');
+  if (code.length !== 4) { netMsg.textContent = '방 코드 숫자 4자리를 입력해 주세요.'; codeIn.focus(); return; }
+  if (roomNs) netOpen('guest', code);
+});
+codeIn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); joinBtn.click(); } });
+codeIn.addEventListener('input', () => { codeIn.value = codeIn.value.replace(/\D/g, '').slice(0, 4); });
+netStartBtn.addEventListener('click', () => netStartRound());
+netLeaveBtn.addEventListener('click', () => { netLeave(); setMode(3); });
+
+function netLeave() {
+  if (!net) return;
+  const r = net.r; net = null; running = false; ending = null;
+  try { r.leave().catch(() => {}); } catch (e) {}
+}
+
+function netGuestSend() {
+  if (!net) return;
+  net.r.presence({ role: 'guest', name: myName, dir: net.dir, bs: net.bs }).catch(() => {});
+}
+
+function netEncode() {
+  let g = '', f = '';
+  for (let i = 0; i < N; i++) {
+    g += grid[i] === WALL ? '1' : grid[i] === CRATE ? '2' : itemAt[i] ? 'abc'[itemAt[i] - 1] : '0';
+    f += flameT[i] > 0 ? String(Math.max(1, Math.min(9, Math.ceil(flameT[i] / FLAME_T * 9)))) : '0';
+  }
+  const r2 = v => Math.round(v * 100) / 100;
+  return {
+    ph: net.phase, rd: net.rd, t: Math.round(Math.max(0, timeLeft) * 10) / 10, g, f,
+    b: bombs.filter(b => !b.done).map(b => [b.x, b.y, r2(b.timer), b.range]),
+    p: net.phase === 'lobby' ? [] : players.map(p => [r2(p.fx + (p.tx - p.fx) * p.t), r2(p.fy + (p.ty - p.fy) * p.t), p.face, p.alive ? 1 : 0, r2(p.deadT), p.range, p.maxB, p.spd, p.moving ? 1 : 0]),
+    n: [myName, net.names[1] || ''], sc: net.sc, res: net.res, gp: net.gp || ''
+  };
+}
+function netSend(force, now) {
+  if (!net || net.role !== 'host') return;
+  if (!force && now - net.sendT < 33) return;
+  net.sendT = now;
+  net.r.presence({ role: 'host', name: myName, st: netEncode() }).catch(() => {});
+}
+
+function netStartRound() {
+  if (!net || net.role !== 'host' || !net.gp) return;
+  audioInit();
+  mode = 3; newGame();
+  const gName = net.names[1] || '손님';
+  Object.assign(players[0], look(myName, 0, gName), { me: true });
+  Object.assign(players[1], look(gName, 1, myName), { me: false });
+  chipKey = '';
+  net.rd++; net.phase = 'play'; net.res = ''; net.gbs = net.lastGuestBs; net.gdir = -1;
+  resize(); overlay.hidden = true; lobbyCard.hidden = true; endCard.hidden = true; running = true;
+  netSend(true, performance.now());
+}
+
+function netFinish(res) {
+  if (!net) return;
+  if (res === 'j') net.sc[0]++; else if (res === 'h') net.sc[1]++; else net.sc[2]++;
+  net.phase = 'end'; net.res = res;
+  netSend(true, performance.now());
+  showNetEnd(res, [myName, net.names[1]], net.sc);
+}
+
+function showNetEnd(res, n, sc) {
+  const T = document.getElementById('resTitle'), sub = document.getElementById('resSub');
+  const meIdx = net && net.role === 'guest' ? 1 : 0;
+  const winIdx = res === 'j' ? 0 : res === 'h' ? 1 : -1;
+  const a = look(n[0], 0, n[1]), b = look(n[1], 1, n[0]);
+  T.className = 'result ' + (winIdx < 0 ? 'draw' : 'win');
+  T.style.color = winIdx === 0 ? a.color : winIdx === 1 ? b.color : '';
+  T.textContent = winIdx < 0 ? '무승부' : `${winIdx ? b.name : a.name} 승리!`;
+  sub.textContent = net && net.spect ? '관전 중이에요.' : winIdx < 0 ? '이번 판은 무승부예요.' : winIdx === meIdx ? '이겼어요! 한 판 더 할까요?' : '아쉬워요. 복수전 가나요?';
+  if (winIdx === meIdx) sBlip(520, 0.3);
+  const s = Array.isArray(sc) ? sc.map(v => Number.isInteger(v) ? v : 0) : [0, 0, 0];
+  record2.textContent = `${a.name} ${s[0]} : ${s[1]} ${b.name}` + (s[2] ? ` · 무승부 ${s[2]}` : '');
+  const host = net && net.role === 'host';
+  againBtn.hidden = !host;
+  endNote.hidden = host; endNote.textContent = `${a.name}(방장)이 한 판 더를 누르면 바로 시작돼요.`;
+  menuBtn.textContent = '나가기';
+  menu.hidden = true; lobbyCard.hidden = true; endCard.hidden = false; overlay.hidden = false;
+}
+
+function showLost() {
+  const T = document.getElementById('resTitle'), sub = document.getElementById('resSub');
+  T.className = 'result draw'; T.style.color = ''; T.textContent = '연결 끊김';
+  sub.textContent = '상대와 연결이 끊겼어요. 다시 방을 만들어 주세요.';
+  record2.textContent = ''; againBtn.hidden = true; endNote.hidden = true; menuBtn.textContent = '나가기';
+  menu.hidden = true; lobbyCard.hidden = true; endCard.hidden = false; overlay.hidden = false;
+}
+
+function applySnap(st) {
+  if (!st || typeof st !== 'object') return;
+  const n = Array.isArray(st.n) ? [cleanName(st.n[0]), cleanName(st.n[1])] : ['', ''];
+  net.names = n;
+  const ph = ['lobby', 'play', 'end'].includes(st.ph) ? st.ph : 'lobby';
+  const rd = Number.isInteger(st.rd) ? st.rd : 0;
+  net.spect = !!(st.gp && net.myPeer && st.gp !== net.myPeer);
+  if (ph === 'lobby') {
+    lobbyMsg.textContent = net.spect ? '이미 다른 사람이 들어와 있어요. 시작하면 관전할 수 있어요.' : `${n[0] || '방장'}의 방에 들어왔어요. 시작을 기다리는 중…`;
+    net.phase = 'lobby';
+    return;
+  }
+  if (rd !== net.rd || ph !== net.phase) {
+    if (ph === 'play' && rd !== net.rd) {
+      players = [0, 1].map(k => ({ id: k, ...look(n[k], k, n[1 - k]), ai: false, ctl: -1, me: !net.spect && k === 1,
+        tx: 0, ty: 0, fx: 0, fy: 0, gx: 0, gy: 0, t: 1, moving: false, mdir: 2, face: 2, dir: -1, speed: 3.3, spd: 1, maxB: 1, range: 2,
+        active: 0, alive: true, deadT: 0, cd: 0, react: 0, init: false }));
+      parts = []; chipKey = ''; net.primed = false; net.statSum = 0; net.nBombs = 0;
+      overlay.hidden = true; lobbyCard.hidden = true; endCard.hidden = true; resize();
+    }
+    net.rd = rd; net.phase = ph;
+    if (ph === 'end') showNetEnd(st.res, n, st.sc);
+  }
+  if (!players.length || players.length !== 2) return;
+  if (typeof st.g === 'string' && st.g.length === N) {
+    for (let i = 0; i < N; i++) {
+      const ch = st.g[i], old = grid[i];
+      grid[i] = ch === '1' ? WALL : ch === '2' ? CRATE : EMPTY;
+      itemAt[i] = ch === 'a' ? 1 : ch === 'b' ? 2 : ch === 'c' ? 3 : 0;
+      if (net.primed && old === CRATE && grid[i] !== CRATE) burst(i % W, (i / W) | 0, 8, [C.crate, C.crateTop, C.gold]);
+    }
+  }
+  if (typeof st.f === 'string' && st.f.length === N) {
+    let boom = false;
+    for (let i = 0; i < N; i++) {
+      const v = (parseInt(st.f[i], 10) || 0) / 9 * FLAME_T;
+      if (v > 0 && flameT[i] === 0 && net.primed) { boom = true; if (Math.random() < 0.5) burst(i % W, (i / W) | 0, 4, [C.gold, C.lantern, '#fff3c4']); }
+      flameT[i] = v;
+    }
+    if (boom) { sBoom(); shake = Math.min(0.35, shake + 0.16); }
+  }
+  if (Array.isArray(st.b)) {
+    bombs = st.b.slice(0, 60).filter(a => Array.isArray(a)).map(a => ({
+      x: Math.max(0, Math.min(W - 1, a[0] | 0)), y: Math.max(0, Math.min(H - 1, a[1] | 0)),
+      timer: Math.max(0, Math.min(BOMB_T, +a[2] || 0)), range: a[3] | 0, age: 0, done: false, owner: players[0]
+    }));
+    if (bombs.length > net.nBombs && net.primed) sBlip(220, 0.08);
+    net.nBombs = bombs.length;
+  }
+  if (Array.isArray(st.p)) {
+    for (let k = 0; k < 2; k++) {
+      const a = st.p[k], p = players[k];
+      if (!Array.isArray(a) || !p) continue;
+      const x = Math.max(0, Math.min(W - 1, +a[0] || 0)), y = Math.max(0, Math.min(H - 1, +a[1] || 0));
+      if (!p.init) { p.fx = p.tx = x; p.fy = p.ty = y; p.init = true; }
+      p.gx = x; p.gy = y; p.face = (a[2] | 0) & 3;
+      const alive = !!a[3];
+      if (p.alive && !alive) { burst(p.fx, p.fy, 18, [p.color, p.belly, '#ffffff']); if (p.me) { try { navigator.vibrate && navigator.vibrate(220); } catch (e) {} } }
+      p.alive = alive; p.deadT = Math.max(0, +a[4] || 0);
+      p.range = a[5] | 0; p.maxB = a[6] | 0; p.spd = a[7] | 0; p.moving = !!a[8];
+      if (p.me) { const sum = p.range + p.maxB + p.spd; if (net.primed && sum > net.statSum) sBlip(660, 0.15); net.statSum = sum; }
+    }
+  }
+  timeLeft = Math.max(0, Math.min(ROUND_T, +st.t || 0));
+  net.primed = true;
+}
+
+function netTick(dt) {
+  if (!net) return;
+  const now = performance.now();
+  let peers = [];
+  try { peers = net.r.peers(); } catch (e) {}
+  const self = peers.find(p => p.sameTab); if (self) net.myPeer = self.peer;
+  if (net.role === 'host') {
+    let g = net.gp ? peers.find(p => p.peer === net.gp) : null;
+    if (!g && net.phase === 'lobby') {
+      net.gp = null;
+      g = peers.find(p => !p.sameTab && p.presence && p.presence.role === 'guest') || null;
+      if (g) net.gp = g.peer;
+    }
+    if (g) {
+      net.lastSeen = now;
+      const pr = g.presence || {};
+      net.names[1] = cleanName(pr.name) || '손님';
+      const bs = Number.isInteger(pr.bs) && pr.bs >= 0 ? pr.bs : 0;
+      net.lastGuestBs = bs;
+      if (running && players[1]) {
+        const dd = Number.isInteger(pr.dir) && pr.dir >= -1 && pr.dir <= 3 ? pr.dir : -1;
+        if (dd !== net.gdir) { net.gdir = dd; setPDir(players[1], dd); }
+        if (bs > net.gbs) { net.gbs = bs; placeBomb(players[1]); }
+      }
+    }
+    if (net.phase === 'lobby') {
+      netStartBtn.disabled = !g;
+      lobbyMsg.textContent = g ? `${net.names[1]} 입장! 시작을 누르세요.` : '상대에게 이 코드를 알려주세요. 들어오면 시작할 수 있어요.';
+    }
+    netSend(false, now);
+  } else {
+    const h = peers.find(p => !p.sameTab && p.presence && p.presence.role === 'host');
+    if (h) { net.lastSeen = now; applySnap(h.presence.st); }
+    else if (net.phase === 'lobby' && now - net.joinedAt > 6000) lobbyMsg.textContent = '방을 찾지 못했어요. 코드를 다시 확인해 주세요.';
+    for (const p of players) {
+      if (!p.init) continue;
+      const k = Math.min(1, dt * 18);
+      if (Math.abs(p.gx - p.fx) + Math.abs(p.gy - p.fy) > 2) { p.fx = p.gx; p.fy = p.gy; }
+      p.fx += (p.gx - p.fx) * k; p.fy += (p.gy - p.fy) * k; p.tx = p.fx; p.ty = p.fy; p.t = 1;
+    }
+  }
+  if ((net.phase === 'play' || net.phase === 'end') && now - net.lastSeen > 5000 && !net.lost) {
+    net.lost = true; running = false; showLost();
+  }
+}
+
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (!document.hidden) { update(dt); hud(dt); render(); }
+  if (!document.hidden) { netTick(dt); update(dt); hud(dt); render(); }
   requestAnimationFrame(frame);
 }
 
