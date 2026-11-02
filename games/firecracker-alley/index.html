@@ -139,17 +139,17 @@ canvas {
 #netPanel { display: grid; gap: 10px; }
 .joinRow { display: flex; gap: 8px; }
 .joinRow input {
-  flex: 1; min-width: 0; padding: 12px 14px; border-radius: 14px; border: 2px solid #3a3166;
+  flex: 1 1 0; width: 0; min-width: 0; padding: 12px 10px; border-radius: 14px; border: 2px solid #3a3166;
   background: rgba(255,255,255,.04); color: var(--paper); font-family: var(--display); font-size: 22px;
   letter-spacing: .25em; text-align: center; user-select: text; -webkit-user-select: text;
 }
 .joinRow input:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-.joinRow .btn { width: auto; padding: 12px 20px; flex: none; }
+#netPanel .joinRow .btn { width: auto; padding: 12px 18px; flex: none; white-space: nowrap; }
 .netMsg { min-height: 1.5em; font-size: 14px; }
 .eyebrow { margin: 0; font-size: 12px; letter-spacing: .18em; color: var(--muted); }
 .card .code { margin: 0; font-family: var(--display); font-size: 68px; line-height: 1; letter-spacing: .14em; color: var(--gold); font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(255,201,74,.3); user-select: text; -webkit-user-select: text; }
 .btn:disabled { opacity: .4; cursor: default; }
-.seg.mode button { max-width: none; display: grid; gap: 2px; padding: 10px 6px; font-size: 18px; }
+.seg.mode button { max-width: none; display: grid; gap: 2px; padding: 10px 4px; font-size: clamp(14px, 4.4vw, 18px); }
 .seg.mode button small { font-family: var(--body); font-size: 12px; color: var(--muted); }
 .bombBtn small { display: block; font-family: var(--body); font-size: 11px; opacity: .85; margin-top: 2px; }
 .bombBtn:active, .bombBtn.press { transform: scale(.94); box-shadow: inset 0 -3px 0 rgba(0,0,0,.25), 0 0 0 9px rgba(255,201,74,.25), 0 6px 14px rgba(0,0,0,.45); }
@@ -158,12 +158,15 @@ canvas {
 
 /* Overlay */
 #overlay {
+  grid-template-columns: minmax(0, 1fr); justify-items: center;
   position: absolute; inset: 0; z-index: 5; display: grid; place-items: center;
   background: rgba(14,11,32,.82); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 16px; overflow-y: auto; touch-action: pan-y;
 }
-.card { width: min(420px, 100%); display: grid; gap: 16px; text-align: center; }
+.card { width: min(420px, 100%); min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; text-align: center; }
+.card > *, #netPanel > * { min-width: 0; }
+.seg button { min-width: 0; }
 .card h1 {
   margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(46px, 13vw, 64px); line-height: 1;
   color: var(--gold); text-shadow: 0 4px 0 #b43a30, 0 0 30px rgba(255,201,74,.35); text-wrap: balance;
@@ -236,7 +239,7 @@ canvas {
         </div>
         <button class="btn" id="hostBtn" type="button">방 만들기</button>
         <div class="joinRow">
-          <input id="codeIn" type="text" inputmode="numeric" maxlength="4" placeholder="코드 4자리" autocomplete="off" aria-label="방 코드">
+          <input id="codeIn" size="4" type="text" inputmode="numeric" maxlength="4" placeholder="코드 4자리" autocomplete="off" aria-label="방 코드">
           <button class="btn ghost" id="joinBtn" type="button">들어가기</button>
         </div>
         <p class="netMsg" id="netMsg"></p>
