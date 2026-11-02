@@ -78,25 +78,25 @@ canvas {
 }
 
 /* Controls */
-#dpad {
+.dpad {
   grid-area: dpad; justify-self: start; position: relative;
   width: 156px; height: 156px; border-radius: 50%; touch-action: none;
   background: radial-gradient(circle at 50% 45%, #2e2659, #1c1738);
   box-shadow: inset 0 2px 0 rgba(255,255,255,.08), 0 8px 18px rgba(0,0,0,.4);
 }
-#dpad span {
+.dpad span {
   position: absolute; width: 0; height: 0; border: 15px solid transparent; opacity: .45; transition: opacity .08s, transform .08s;
 }
-#dpad span.on { opacity: 1; }
-#dpad .u { left: 50%; top: 14px; margin-left: -15px; border-bottom: 22px solid var(--paper); border-top: 0; }
-#dpad .d { left: 50%; bottom: 14px; margin-left: -15px; border-top: 22px solid var(--paper); border-bottom: 0; }
-#dpad .l { top: 50%; left: 14px; margin-top: -15px; border-right: 22px solid var(--paper); border-left: 0; }
-#dpad .r { top: 50%; right: 14px; margin-top: -15px; border-left: 22px solid var(--paper); border-right: 0; }
-#knob {
+.dpad span.on { opacity: 1; }
+.dpad .u { left: 50%; top: 14px; margin-left: -15px; border-bottom: 22px solid var(--paper); border-top: 0; }
+.dpad .d { left: 50%; bottom: 14px; margin-left: -15px; border-top: 22px solid var(--paper); border-bottom: 0; }
+.dpad .l { top: 50%; left: 14px; margin-top: -15px; border-right: 22px solid var(--paper); border-left: 0; }
+.dpad .r { top: 50%; right: 14px; margin-top: -15px; border-left: 22px solid var(--paper); border-right: 0; }
+.knob {
   position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
   background: #3b3270; box-shadow: inset 0 3px 0 rgba(255,255,255,.12), 0 4px 10px rgba(0,0,0,.4); pointer-events: none;
 }
-#bombBtn {
+.bombBtn {
   grid-area: bomb; justify-self: end; touch-action: none;
   width: 116px; height: 116px; border-radius: 50%; border: 0; cursor: pointer;
   background: radial-gradient(circle at 40% 32%, #ff8a72, var(--lantern) 55%, #c9302a);
@@ -104,10 +104,42 @@ canvas {
   color: #fff7ea; font-family: var(--display); font-size: 30px; text-shadow: 0 2px 0 rgba(0,0,0,.25);
   display: grid; place-items: center; line-height: 1;
 }
-#bombBtn small { display: block; font-family: var(--body); font-size: 11px; opacity: .85; margin-top: 2px; }
-#bombBtn:active, #bombBtn.press { transform: scale(.94); box-shadow: inset 0 -3px 0 rgba(0,0,0,.25), 0 0 0 9px rgba(255,201,74,.25), 0 6px 14px rgba(0,0,0,.45); }
-#bombBtn:focus-visible, .btn:focus-visible, .seg button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
-@media (min-width: 900px) and (min-height: 700px) { #dpad, #bombBtn { opacity: .9; } }
+/* 2인 모드: 해미의 조작부는 위쪽에 뒤집어서 */
+#app.two {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "bomb2 dpad2" "hud hud" "board board" "dpad bomb";
+  gap: 8px;
+}
+#app.two .dpad { width: 136px; height: 136px; }
+#app.two .bombBtn { width: 100px; height: 100px; font-size: 26px; }
+#app.two .dpad.p2 { grid-area: dpad2; justify-self: end; transform: rotate(180deg); }
+#app.two .bombBtn.p2 { grid-area: bomb2; justify-self: start; transform: rotate(180deg); }
+#app.two .bombBtn.p2:active, #app.two .bombBtn.p2.press { transform: rotate(180deg) scale(.94); }
+.bombBtn.p2 { background: radial-gradient(circle at 40% 32%, #ffb0d4, #ff7ab8 55%, #c94886); box-shadow: inset 0 -7px 0 rgba(0,0,0,.25), 0 0 0 6px rgba(255,122,184,.18), 0 10px 22px rgba(0,0,0,.45); }
+.dpad.p2 { box-shadow: inset 0 2px 0 rgba(255,255,255,.08), 0 0 0 3px rgba(255,122,184,.35), 0 8px 18px rgba(0,0,0,.4); }
+#app.two .dpad.p1 { box-shadow: inset 0 2px 0 rgba(255,255,255,.08), 0 0 0 3px rgba(63,209,168,.35), 0 8px 18px rgba(0,0,0,.4); }
+#app.two #stats { display: none; }
+#app.two #hud { justify-content: center; }
+.chip small { font-family: var(--body); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (orientation: landscape) and (max-height: 560px) {
+  #app.two {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "hud hud hud" "dpad board dpad2" "bomb board bomb2";
+  }
+  #app.two .dpad.p2, #app.two .bombBtn.p2 { transform: none; justify-self: center; }
+  #app.two .bombBtn.p2:active, #app.two .bombBtn.p2.press { transform: scale(.94); }
+  #app.two .dpad.p1, #app.two .bombBtn.p1 { justify-self: center; }
+  #app.two .dpad { width: 120px; height: 120px; }
+  #app.two .bombBtn { width: 84px; height: 84px; font-size: 22px; }
+
+}
+.seg.mode button { max-width: none; display: grid; gap: 2px; padding: 10px 6px; font-size: 18px; }
+.seg.mode button small { font-family: var(--body); font-size: 12px; color: var(--muted); }
+.bombBtn small { display: block; font-family: var(--body); font-size: 11px; opacity: .85; margin-top: 2px; }
+.bombBtn:active, .bombBtn.press { transform: scale(.94); box-shadow: inset 0 -3px 0 rgba(0,0,0,.25), 0 0 0 9px rgba(255,201,74,.25), 0 6px 14px rgba(0,0,0,.45); }
+.bombBtn:focus-visible, .btn:focus-visible, .seg button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+@media (min-width: 900px) and (min-height: 700px) { .dpad, .bombBtn { opacity: .9; } }
 
 /* Overlay */
 #overlay {
@@ -143,7 +175,7 @@ canvas {
 .result.win { color: var(--gold); text-shadow: 0 0 30px rgba(255,201,74,.5); }
 .result.lose { color: var(--lantern); }
 .result.draw { color: var(--muted); }
-@media (prefers-reduced-motion: reduce) { #bombBtn, .chip { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .bombBtn, .chip { transition: none; } }
 </style>
 
 </head>
@@ -155,14 +187,21 @@ canvas {
     <div id="stats"><span>불길 <b id="sR">2</b></span><span>폭죽 <b id="sB">1</b></span><span>속도 <b id="sS">1</b></span></div>
   </div>
   <div id="board"><canvas id="cv" aria-label="게임 화면"></canvas></div>
-  <div id="dpad" aria-label="이동 패드"><span class="u"></span><span class="r"></span><span class="d"></span><span class="l"></span><div id="knob"></div></div>
-  <button id="bombBtn" aria-label="폭죽 놓기"><span>펑!<small>폭죽 놓기</small></span></button>
+  <div class="dpad p1" id="dpad" aria-label="정혁 이동 패드"><span class="u"></span><span class="r"></span><span class="d"></span><span class="l"></span><div class="knob"></div></div>
+  <button class="bombBtn p1" id="bombBtn" aria-label="정혁 폭죽 놓기"><span>펑!<small>폭죽 놓기</small></span></button>
+  <div class="dpad p2" id="dpad2" aria-label="해미 이동 패드" hidden><span class="u"></span><span class="r"></span><span class="d"></span><span class="l"></span><div class="knob"></div></div>
+  <button class="bombBtn p2" id="bombBtn2" aria-label="해미 폭죽 놓기" hidden><span>펑!<small>해미</small></span></button>
 
   <div id="overlay">
     <div class="card" id="menu">
       <h1>폭죽 <em>골목</em></h1>
       <p>야시장 골목에 폭죽을 놓고 상자를 부수세요.<br>불꽃을 피해 마지막까지 살아남으면 승리!</p>
+      <div class="seg mode" id="mode">
+        <button type="button" id="m1" data-m="1" aria-pressed="true">혼자 하기<small>정혁 vs 봇 3명</small></button>
+        <button type="button" id="m2" data-m="2" aria-pressed="false">둘이 하기<small>정혁 vs 해미</small></button>
+      </div>
       <div class="howto">
+        <div id="hint2" hidden><i style="background:#ff7ab8">2</i>폰을 가운데 눕혀 두고 마주 앉으세요. 아래쪽 조작은 정혁, 뒤집힌 위쪽 조작은 해미예요.</div>
         <div><i style="background:var(--paper)">◀</i>왼쪽 패드를 누른 채로 이동</div>
         <div><i style="background:var(--lantern);color:#fff">펑</i>펑! 버튼으로 발밑에 폭죽 설치 (2.6초 뒤 십자로 터짐)</div>
         <div><i style="background:var(--gold)">불</i>불길 아이템: 폭발 범위 +1</div>
@@ -206,12 +245,15 @@ const DIFF = [
   { react: 0.04, aggr: 0.9, mistake: 0, wander: [0.03, 0.15] }
 ];
 const ROSTER = [
-  { name: '나', color: '#3fd1a8', dark: '#1f8a6c', belly: '#bff3e2' },
-  { name: '콩이', color: '#ff7ab8', dark: '#b8407a', belly: '#ffd4e8' },
-  { name: '별이', color: '#7aa8ff', dark: '#3f62b8', belly: '#d6e4ff' },
+  { name: '정혁', color: '#3fd1a8', dark: '#1f8a6c', belly: '#bff3e2' },
+  { name: '콩이', color: '#7aa8ff', dark: '#3f62b8', belly: '#d6e4ff' },
+  { name: '별이', color: '#c99bff', dark: '#7a4fc0', belly: '#ecdcff' },
   { name: '귤이', color: '#ffad42', dark: '#b8701c', belly: '#ffe3b8' }
 ];
-const SPAWNS = [[0, 0], [W - 1, H - 1], [W - 1, 0], [0, H - 1]];
+const HAEMI = { name: '해미', color: '#ff7ab8', dark: '#b8407a', belly: '#ffd4e8' };
+const SPAWNS1 = [[0, 0], [W - 1, H - 1], [W - 1, 0], [0, H - 1]];
+const SPAWNS2 = [[0, H - 1], [W - 1, 0]]; // 정혁은 아래쪽, 해미는 위쪽(마주 앉은 쪽)
+let mode = 1;
 
 const idx = (x, y) => y * W + x;
 const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
@@ -222,11 +264,15 @@ let bombs = [], players = [], parts = [];
 let running = false, ending = null, timeLeft = ROUND_T, clock = 0, shake = 0, diff = 1;
 
 // ---------- 저장 ----------
-let rec = { w: 0, l: 0, d: 0 };
+let rec = { w: 0, l: 0, d: 0 }, vs = { j: 0, h: 0, d: 0 };
 try { const s = JSON.parse(localStorage.getItem('fa-record') || 'null'); if (s) rec = s; } catch (e) {}
+try { const s = JSON.parse(localStorage.getItem('fa-vs') || 'null'); if (s) vs = s; } catch (e) {}
 try { const v = localStorage.getItem('fa-diff'); const d = +v; if (v !== null && d >= 0 && d <= 2) diff = d; } catch (e) {}
-function saveRec() { try { localStorage.setItem('fa-record', JSON.stringify(rec)); } catch (e) {} }
-function recText() { return `전적 ${rec.w}승 ${rec.l}패 ${rec.d}무`; }
+try { if (localStorage.getItem('fa-mode') === '2') mode = 2; } catch (e) {}
+function saveRec() { try { localStorage.setItem('fa-record', JSON.stringify(rec)); localStorage.setItem('fa-vs', JSON.stringify(vs)); } catch (e) {} }
+function recText() {
+  return mode === 2 ? `정혁 ${vs.j} : ${vs.h} 해미${vs.d ? ` (무승부 ${vs.d})` : ''}` : `혼자 하기 전적 ${rec.w}승 ${rec.l}패 ${rec.d}무`;
+}
 
 // ---------- 사운드 ----------
 let ac = null;
@@ -259,6 +305,7 @@ function newGame() {
     if (x % 2 === 1 && y % 2 === 1) grid[idx(x, y)] = WALL;
     else if (Math.random() < 0.74) grid[idx(x, y)] = CRATE;
   }
+  const SPAWNS = mode === 2 ? SPAWNS2 : SPAWNS1;
   for (const [sx, sy] of SPAWNS) {
     for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2]]) {
       const x = sx + dx, y = sy + dy;
@@ -268,7 +315,8 @@ function newGame() {
   }
   const cfg = DIFF[diff];
   players = SPAWNS.map(([x, y], i) => ({
-    id: i, ...ROSTER[i], ai: i > 0, tx: x, ty: y, fx: x, fy: y, t: 1, moving: false, mdir: 2, face: 2, dir: -1,
+    id: i, ...(mode === 2 && i === 1 ? HAEMI : ROSTER[i]), ai: mode === 1 && i > 0, ctl: mode === 2 ? i : (i === 0 ? 0 : -1),
+    tx: x, ty: y, fx: x, fy: y, t: 1, moving: false, mdir: 2, face: mode === 2 ? (i === 0 ? 0 : 2) : 2, dir: -1,
     speed: 3.3, spd: 1, maxB: 1, range: 2, active: 0, alive: true, deadT: 0, cd: rand(0.2, 0.6), react: cfg.react
   }));
   buildChips();
@@ -285,8 +333,8 @@ function tryMove(p, d) {
   return true;
 }
 
-function setHumanDir(d) {
-  const p = players[0]; if (!p || !p.alive) return;
+function setHumanDir(c, d) {
+  const p = players.find(q => q.ctl === c); if (!p || !p.alive) return;
   p.dir = d;
   if (d >= 0 && p.moving && d === (p.mdir + 2) % 4) {
     [p.fx, p.tx] = [p.tx, p.fx]; [p.fy, p.ty] = [p.ty, p.fy];
@@ -519,13 +567,24 @@ function update(dt) {
   }
 
   if (!ending) {
-    const me = players[0], bots = players.filter(p => p.ai && p.alive).length;
-    if (!me.alive) ending = { res: 'lose', t: 1.4 };
-    else if (bots === 0) ending = { res: 'win', t: 1.2 };
-    else if (timeLeft <= 0) { timeLeft = 0; ending = { res: 'draw', t: 0.4 }; }
+    if (mode === 2) {
+      // 누가 쓰러지면 잠깐 기다렸다가 판정 (동시에 쓰러지면 무승부)
+      if (!players[0].alive || !players[1].alive) ending = { res: 'vs', t: 1.2 };
+      else if (timeLeft <= 0) { timeLeft = 0; ending = { res: 'vs', t: 0.4 }; }
+    } else {
+      const me = players[0], bots = players.filter(p => p.ai && p.alive).length;
+      if (!me.alive) ending = { res: 'lose', t: 1.4 };
+      else if (bots === 0) ending = { res: 'win', t: 1.2 };
+      else if (timeLeft <= 0) { timeLeft = 0; ending = { res: 'draw', t: 0.4 }; }
+    }
   } else {
     ending.t -= dt;
-    if (ending.t <= 0) finish(ending.res);
+    if (ending.t <= 0) {
+      if (ending.res === 'vs') {
+        const j = players[0].alive, h = players[1].alive;
+        finish(j && !h ? 'j' : h && !j ? 'h' : 'draw');
+      } else finish(ending.res);
+    }
   }
 }
 
@@ -692,12 +751,17 @@ function render() {
 // ---------- HUD ----------
 const chipsEl = document.getElementById('chips'), timerEl = document.getElementById('timer');
 const sR = document.getElementById('sR'), sB = document.getElementById('sB'), sS = document.getElementById('sS');
+let chipKey = '';
 function buildChips() {
-  chipsEl.innerHTML = players.map(p => `<span class="chip${p.alive ? '' : ' out'}"><i style="background:${p.color}"></i>${p.name}</span>`).join('');
+  const key = players.map(p => [p.alive, p.range, p.maxB, p.spd].join()).join('|') + mode;
+  if (key === chipKey) return; chipKey = key;
+  chipsEl.innerHTML = players.map(p => `<span class="chip${p.alive ? '' : ' out'}"><i style="background:${p.color}"></i>${p.name}` +
+    (mode === 2 ? ` <small>불${p.range} 탄${p.maxB} 발${p.spd}</small>` : '') + `</span>`).join('');
 }
 let hudT = 0;
 function hud(dt) {
   hudT -= dt; if (hudT > 0) return; hudT = 0.1;
+  buildChips();
   const t = Math.max(0, Math.ceil(timeLeft));
   timerEl.textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
   timerEl.classList.toggle('hot', t <= 20);
@@ -714,22 +778,50 @@ function start() {
   overlay.hidden = true; running = true;
   try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {}
 }
+const endCardEl = document.getElementById('endCard');
 function finish(res) {
   running = false; ending = null;
-  if (res === 'win') rec.w++; else if (res === 'lose') rec.l++; else rec.d++;
-  saveRec();
   const T = document.getElementById('resTitle'), sub = document.getElementById('resSub');
-  T.className = 'result ' + res;
-  T.textContent = res === 'win' ? '승리!' : res === 'lose' ? '펑…' : '무승부';
-  sub.textContent = res === 'win' ? '골목에 남은 건 당신뿐이에요.' : res === 'lose' ? '불꽃에 휘말렸어요. 다시 도전해 보세요.' : '시간이 다 됐어요. 아무도 끝내지 못했네요.';
-  if (res === 'win') sBlip(520, 0.3);
+  if (mode === 2) {
+    if (res === 'j') vs.j++; else if (res === 'h') vs.h++; else vs.d++;
+    T.className = 'result ' + (res === 'draw' ? 'draw' : 'win');
+    T.style.color = res === 'j' ? ROSTER[0].color : res === 'h' ? HAEMI.color : '';
+    T.textContent = res === 'j' ? '정혁 승리!' : res === 'h' ? '해미 승리!' : '무승부';
+    sub.textContent = res === 'draw' ? (timeLeft <= 0 ? '시간이 다 됐어요. 둘 다 살아남았네요.' : '둘이 동시에 펑! 사이좋게 무승부예요.')
+      : res === 'j' ? '해미가 불꽃에 휘말렸어요. 복수전 가나요?' : '정혁이 불꽃에 휘말렸어요. 복수전 가나요?';
+    if (res !== 'draw') sBlip(520, 0.3);
+  } else {
+    if (res === 'win') rec.w++; else if (res === 'lose') rec.l++; else rec.d++;
+    T.className = 'result ' + res; T.style.color = '';
+    T.textContent = res === 'win' ? '승리!' : res === 'lose' ? '펑…' : '무승부';
+    sub.textContent = res === 'win' ? '정혁, 골목에 남은 건 당신뿐이에요.' : res === 'lose' ? '불꽃에 휘말렸어요. 다시 도전해 보세요.' : '시간이 다 됐어요. 아무도 끝내지 못했네요.';
+
+    if (res === 'win') sBlip(520, 0.3);
+  }
+  saveRec();
   record2.textContent = recText();
   menu.hidden = true; endCard.hidden = false; overlay.hidden = false;
 }
 function showMenu() {
   running = false; endCard.hidden = true; menu.hidden = false; overlay.hidden = false;
-  recordEl.textContent = (rec.w + rec.l + rec.d) ? recText() + ' · PC: 방향키 + 스페이스' : 'PC에서는 방향키/WASD로 이동, 스페이스로 폭죽';
+  const keys = mode === 2 ? 'PC: 정혁 WASD + 스페이스, 해미 방향키 + 엔터' : 'PC: 방향키/WASD로 이동, 스페이스로 폭죽';
+  const has = mode === 2 ? vs.j + vs.h + vs.d : rec.w + rec.l + rec.d;
+  recordEl.textContent = has ? recText() + ' · ' + keys : keys;
 }
+const appEl = document.getElementById('app');
+const modeBtns = [...document.querySelectorAll('#mode button')];
+function setMode(m) {
+  mode = m;
+  modeBtns.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.m === m)));
+  appEl.classList.toggle('two', m === 2);
+  document.getElementById('dpad2').hidden = m !== 2;
+  document.getElementById('bombBtn2').hidden = m !== 2;
+  document.getElementById('diff').hidden = m === 2;
+  document.getElementById('hint2').hidden = m !== 2;
+  try { localStorage.setItem('fa-mode', String(m)); } catch (e) {}
+  if (!running) { newGame(); placeBomb(players[1]); resize(); showMenu(); }
+}
+modeBtns.forEach(b => b.addEventListener('click', () => setMode(+b.dataset.m)));
 document.getElementById('startBtn').addEventListener('click', start);
 document.getElementById('againBtn').addEventListener('click', start);
 document.getElementById('menuBtn').addEventListener('click', showMenu);
@@ -739,44 +831,56 @@ diffBtns.forEach(b => b.addEventListener('click', () => setDiff(+b.dataset.d)));
 setDiff(diff);
 
 // ---------- 입력 ----------
-const dpad = document.getElementById('dpad'), knob = document.getElementById('knob');
-const arrows = [dpad.querySelector('.u'), dpad.querySelector('.r'), dpad.querySelector('.d'), dpad.querySelector('.l')];
-let padId = null, padDir = -1, keyStack = [];
-function applyDir() {
-  const d = padDir >= 0 ? padDir : (keyStack.length ? keyStack[keyStack.length - 1] : -1);
-  arrows.forEach((a, k) => a.classList.toggle('on', k === d));
-  if (running) setHumanDir(d);
-}
-function padMove(e) {
-  const r = dpad.getBoundingClientRect();
-  const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-  const dist = Math.hypot(dx, dy), lim = r.width * .28, k = Math.min(1, lim / (dist || 1));
-  knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
-  padDir = dist < 12 ? -1 : Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
-  applyDir();
-}
-dpad.addEventListener('pointerdown', e => { e.preventDefault(); padId = e.pointerId; try { dpad.setPointerCapture(e.pointerId); } catch (x) {} padMove(e); });
-dpad.addEventListener('pointermove', e => { if (e.pointerId === padId) padMove(e); });
-const padEnd = e => { if (e.pointerId !== padId) return; padId = null; padDir = -1; knob.style.transform = ''; applyDir(); };
-dpad.addEventListener('pointerup', padEnd); dpad.addEventListener('pointercancel', padEnd); dpad.addEventListener('lostpointercapture', padEnd);
-
-const bombBtn = document.getElementById('bombBtn');
-bombBtn.addEventListener('pointerdown', e => {
-  e.preventDefault(); audioInit();
-  bombBtn.classList.add('press'); setTimeout(() => bombBtn.classList.remove('press'), 120);
-  if (running && players[0]) placeBomb(players[0]);
+// 컨트롤러 0 = 정혁, 1 = 해미 (2인 모드). 방향은 화면 기준이라 마주 앉아도 미는 쪽으로 움직여요.
+const ctls = [0, 1].map(c => {
+  const pad = document.getElementById(c ? 'dpad2' : 'dpad');
+  return { c, pad, knob: pad.querySelector('.knob'), arrows: ['.u', '.r', '.d', '.l'].map(s => pad.querySelector(s)), padId: null, padDir: -1, keys: [], btn: document.getElementById(c ? 'bombBtn2' : 'bombBtn') };
 });
-bombBtn.addEventListener('click', e => e.preventDefault());
+function applyDir(ct) {
+  const d = ct.padDir >= 0 ? ct.padDir : (ct.keys.length ? ct.keys[ct.keys.length - 1] : -1);
+  ct.arrows.forEach((a, k) => a.classList.toggle('on', k === d));
+  if (running) setHumanDir(ct.c, d);
+}
+function humanBomb(c) { const p = players.find(q => q.ctl === c); if (running && p) placeBomb(p); }
+for (const ct of ctls) {
+  const { pad, knob, btn } = ct;
+  const padMove = e => {
+    const r = pad.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const dist = Math.hypot(dx, dy), lim = r.width * .28, k = Math.min(1, lim / (dist || 1));
+    // 뒤집힌 패드는 노브도 뒤집힌 좌표계에서 움직임
+    const flip = getComputedStyle(pad).transform !== 'none' ? -1 : 1;
+    knob.style.transform = `translate(${dx * k * flip}px, ${dy * k * flip}px)`;
+    ct.padDir = dist < 12 ? -1 : Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
+    applyDir(ct);
+  };
+  pad.addEventListener('pointerdown', e => { e.preventDefault(); ct.padId = e.pointerId; try { pad.setPointerCapture(e.pointerId); } catch (x) {} padMove(e); });
+  pad.addEventListener('pointermove', e => { if (e.pointerId === ct.padId) padMove(e); });
+  const padEnd = e => { if (e.pointerId !== ct.padId) return; ct.padId = null; ct.padDir = -1; knob.style.transform = ''; applyDir(ct); };
+  pad.addEventListener('pointerup', padEnd); pad.addEventListener('pointercancel', padEnd); pad.addEventListener('lostpointercapture', padEnd);
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault(); audioInit();
+    btn.classList.add('press'); setTimeout(() => btn.classList.remove('press'), 120);
+    humanBomb(ct.c);
+  });
+  btn.addEventListener('click', e => e.preventDefault());
+}
 
-const KEYMAP = { ArrowUp: 0, KeyW: 0, ArrowRight: 1, KeyD: 1, ArrowDown: 2, KeyS: 2, ArrowLeft: 3, KeyA: 3 };
+const WASD = { KeyW: 0, KeyD: 1, KeyS: 2, KeyA: 3 }, ARROWS = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3 };
+function keyTarget(code) {
+  if (code in WASD) return [0, WASD[code]];
+  if (code in ARROWS) return [mode === 2 ? 1 : 0, ARROWS[code]];
+  return null;
+}
 addEventListener('keydown', e => {
-  if (e.code in KEYMAP) { e.preventDefault(); const d = KEYMAP[e.code]; if (!keyStack.includes(d)) keyStack.push(d); applyDir(); }
-  else if (e.code === 'Space' || e.code === 'Enter') {
-    if (running) { e.preventDefault(); if (!e.repeat) placeBomb(players[0]); }
-  }
+  const t = keyTarget(e.code);
+  if (t) { e.preventDefault(); const ct = ctls[t[0]]; if (!ct.keys.includes(t[1])) ct.keys.push(t[1]); applyDir(ct); return; }
+  if (!running) return;
+  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) humanBomb(0); }
+  else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); if (!e.repeat) humanBomb(mode === 2 ? 1 : 0); }
 });
-addEventListener('keyup', e => { if (e.code in KEYMAP) { keyStack = keyStack.filter(d => d !== KEYMAP[e.code]); applyDir(); } });
-addEventListener('blur', () => { keyStack = []; padDir = -1; applyDir(); });
+addEventListener('keyup', e => { const t = keyTarget(e.code); if (t) { const ct = ctls[t[0]]; ct.keys = ct.keys.filter(d => d !== t[1]); applyDir(ct); } });
+addEventListener('blur', () => { for (const ct of ctls) { ct.keys = []; ct.padDir = -1; applyDir(ct); } });
 document.addEventListener('contextmenu', e => e.preventDefault());
 
 addEventListener('resize', resize);
@@ -789,9 +893,8 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-newGame(); resize(); showMenu();
 // 메뉴 뒤 배경: 샘플 보드에 폭죽 하나
-placeBomb(players[1]);
+setMode(mode);
 requestAnimationFrame(frame);
 })();
 </script>
