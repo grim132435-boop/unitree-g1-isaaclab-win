@@ -844,7 +844,7 @@ function finish(res) {
 }
 function showMenu() {
   running = false; endCard.hidden = true; lobbyCard.hidden = true; menu.hidden = false; overlay.hidden = false;
-  if (mode === 3) { recordEl.textContent = '둘 다 claude.ai에 로그인한 채로 이 페이지를 열고, 한 명이 방을 만들어 코드를 알려주세요.'; return; }
+  if (mode === 3) { recordEl.textContent = '두 사람 모두 각자 폰에서 이 페이지를 열고, 한 명이 방을 만들어 코드를 알려주세요.'; return; }
   const keys = mode === 2 ? 'PC: 정혁 WASD + 스페이스, 해미 방향키 + 엔터' : 'PC: 방향키/WASD로 이동, 스페이스로 폭죽';
   const has = mode === 2 ? vs.j + vs.h + vs.d : rec.w + rec.l + rec.d;
   recordEl.textContent = has ? recText() + ' · ' + keys : keys;
@@ -938,6 +938,108 @@ addEventListener('resize', resize);
 if (window.ResizeObserver) new ResizeObserver(resize).observe(boardEl);
 
 
+
+// ---------- 브라우저용 온라인 연결 (MQTT over WebSocket, 공개 브로커) ----------
+// claude.ai 밖에서는 room 캐퍼빌리티가 없으므로, 같은 presence 방식(peers/presence/leave)을
+// 공개 MQTT 브로커로 흉내 낸다. 외부 라이브러리 없이 MQTT 3.1.1의 필요한 부분만 구현.
+const BROKERS = (() => {
+  try { const b = new URLSearchParams(location.search).get('broker'); if (b && /^wss?:\/\//.test(b)) return [b]; } catch (e) {}
+  return ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
+})();
+const enc = new TextEncoder(), dec = new TextDecoder();
+function mqStr(str) { const b = enc.encode(str); return [b.length >> 8, b.length & 255, ...b]; }
+function mqPacket(type, body) {
+  const len = []; let x = body.length;
+  do { let d = x % 128; x = Math.floor(x / 128); if (x > 0) d |= 128; len.push(d); } while (x > 0);
+  return new Uint8Array([type, ...len, ...body]);
+}
+function mqConnect(url) {
+  return new Promise((resolve, reject) => {
+    let ws, done = false, buf = new Uint8Array(0), handler = null, ping = null;
+    const fail = e => { if (!done) { done = true; reject(e); } };
+    const timer = setTimeout(() => { fail(new Error('timeout')); try { ws.close(); } catch (e) {} }, 6000);
+    try { ws = new WebSocket(url, ['mqtt']); } catch (e) { clearTimeout(timer); fail(e); return; }
+    ws.binaryType = 'arraybuffer';
+    const client = {
+      onmessage: null, onclose: null,
+      subscribe(topic) { ws.send(mqPacket(0x82, [0, 1, ...mqStr(topic), 0])); },
+      publish(topic, text) { if (ws.readyState === 1) ws.send(mqPacket(0x30, [...mqStr(topic), ...enc.encode(text)])); },
+      end() { clearInterval(ping); try { ws.send(mqPacket(0xE0, [])); ws.close(); } catch (e) {} },
+      open() { return ws.readyState === 1; }
+    };
+    ws.onopen = () => {
+      const id = 'fa' + Math.random().toString(36).slice(2, 12);
+      ws.send(mqPacket(0x10, [...mqStr('MQTT'), 4, 2, 0, 30, ...mqStr(id)]));
+    };
+    ws.onerror = () => fail(new Error('ws error'));
+    ws.onclose = () => { clearTimeout(timer); clearInterval(ping); fail(new Error('closed')); if (client.onclose) client.onclose(); };
+    ws.onmessage = ev => {
+      const chunk = new Uint8Array(ev.data), nb = new Uint8Array(buf.length + chunk.length);
+      nb.set(buf); nb.set(chunk, buf.length); buf = nb;
+      for (;;) {
+        if (buf.length < 2) break;
+        let mul = 1, len = 0, i = 1, d;
+        do { if (i >= buf.length) return; d = buf[i++]; len += (d & 127) * mul; mul *= 128; } while (d & 128);
+        if (buf.length < i + len) break;
+        const type = buf[0] >> 4, qos = (buf[0] >> 1) & 3, body = buf.subarray(i, i + len);
+        buf = buf.slice(i + len);
+        if (type === 2) {
+          clearTimeout(timer);
+          if (body[1] === 0 && !done) { done = true; ping = setInterval(() => { try { ws.send(mqPacket(0xC0, [])); } catch (e) {} }, 20000); resolve(client); }
+          else fail(new Error('refused'));
+        } else if (type === 3) {
+          const tl = (body[0] << 8) | body[1];
+          const topic = dec.decode(body.subarray(2, 2 + tl));
+          const payload = dec.decode(body.subarray(2 + tl + (qos ? 2 : 0)));
+          if (client.onmessage) client.onmessage(topic, payload);
+        }
+      }
+    };
+  });
+}
+async function mqttJoin(code) {
+  let c = null;
+  for (const url of BROKERS) { try { c = await mqConnect(url); break; } catch (e) {} }
+  if (!c) throw new Error('no broker');
+  const topic = 'firecracker-alley/v1/room/' + code;
+  const id = Math.random().toString(36).slice(2, 12);
+  const me = { peer: id, sameTab: true, isMe: true, presence: {} };
+  const others = new Map();
+  let lastPub = 0, pending = null, alive = true, snap = [me];
+  const pub = () => { pending = null; lastPub = performance.now(); c.publish(topic, JSON.stringify({ peer: id, presence: me.presence })); };
+  c.onmessage = (t, txt) => {
+    let m; try { m = JSON.parse(txt); } catch (e) { return; }
+    if (!m || typeof m.peer !== 'string' || m.peer === id || m.peer.length > 20) return;
+    if (m.leave) { others.delete(m.peer); return; }
+    if (!others.has(m.peer)) setTimeout(() => alive && pub(), 50); // 새로 온 사람에게 내 상태를 바로 알려줌
+    if (m.presence && typeof m.presence === 'object') others.set(m.peer, { peer: m.peer, sameTab: false, isMe: false, presence: m.presence, seen: performance.now() });
+  };
+  c.onclose = () => { alive = false; };
+  c.subscribe(topic);
+  const beat = setInterval(() => { if (alive && performance.now() - lastPub > 900) pub(); }, 1000);
+  return {
+    presence(patch) {
+      Object.assign(me.presence, patch);
+      if (!alive) return Promise.resolve();
+      const wait = 50 - (performance.now() - lastPub); // 초당 20번까지만 보냄
+      if (wait <= 0) pub(); else if (!pending) pending = setTimeout(pub, wait);
+      return Promise.resolve();
+    },
+    peers() {
+      const now = performance.now();
+      for (const [k, v] of others) if (now - v.seen > 3500) others.delete(k);
+      snap = [me, ...others.values()];
+      return snap;
+    },
+    leave() {
+      alive = false; clearInterval(beat); clearTimeout(pending);
+      try { c.publish(topic, JSON.stringify({ peer: id, leave: true })); } catch (e) {}
+      setTimeout(() => c.end(), 100);
+      return Promise.resolve();
+    }
+  };
+}
+
 // ---------- 온라인 대전 ----------
 // room 캐퍼빌리티의 presence만 씀: 방장 폰이 게임을 돌리고 상태를 presence로 내보내고,
 // 손님 폰은 방향/폭죽 입력을 presence로 보낸 뒤 방장의 상태를 그대로 그린다.
@@ -961,11 +1063,16 @@ function updNetAvail() {
   hostBtn.disabled = joinBtn.disabled = !ok;
   netMsg.textContent = !roomChecked ? '온라인 연결을 확인하는 중…'
     : ok ? '한 명이 방을 만들고, 다른 한 명이 코드로 들어오세요.'
-    : '여기서는 온라인 대전을 열 수 없어요. claude.ai에 로그인한 상태로 이 페이지를 열어 주세요.';
+    : '이 브라우저에서는 온라인 대전을 열 수 없어요.';
 }
 updNetAvail();
+let viaMqtt = false;
 (window.claude && typeof window.claude.use === 'function' ? window.claude.use('room') : Promise.resolve(null))
-  .then(r => { roomNs = r; }, () => { roomNs = null; })
+  .then(r => r, () => null)
+  .then(r => {
+    if (r) roomNs = r;
+    else if (typeof WebSocket === 'function') { roomNs = { join: mqttJoin }; viaMqtt = true; }
+  })
   .then(() => { roomChecked = true; updNetAvail(); });
 
 function cleanName(v) { return typeof v === 'string' ? v.replace(/[^\p{L}\p{N} ]/gu, '').slice(0, 8) : ''; }
@@ -991,7 +1098,7 @@ async function netOpen(role, code) {
     netStartBtn.hidden = role !== 'host'; netStartBtn.disabled = true;
     lobbyMsg.textContent = role === 'host' ? '상대에게 이 코드를 알려주세요. 들어오면 시작할 수 있어요.' : '방에 들어가는 중…';
   } catch (e) {
-    netMsg.textContent = '연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.';
+    netMsg.textContent = viaMqtt ? '온라인 서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.' : '연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.';
     hostBtn.disabled = joinBtn.disabled = false;
   }
 }
@@ -1194,7 +1301,7 @@ function netTick(dt) {
       p.fx += (p.gx - p.fx) * k; p.fy += (p.gy - p.fy) * k; p.tx = p.fx; p.ty = p.fy; p.t = 1;
     }
   }
-  if ((net.phase === 'play' || net.phase === 'end') && now - net.lastSeen > 5000 && !net.lost) {
+  if ((net.phase === 'play' || net.phase === 'end') && now - net.lastSeen > 3000 && !net.lost) {
     net.lost = true; running = false; showLost();
   }
 }
