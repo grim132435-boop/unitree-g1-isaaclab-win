@@ -1,0 +1,20 @@
+{
+  "image": "phone_photo.jpg",
+  "enhance": true,
+  "title": "예시: 24V 전원 → X1 단자대 결선 (시험용 합성 이미지)",
+  "marks": [
+    {"type": "circle", "at": [1365, 693], "r": 34, "label": "PSU +V", "label_pos": "s", "color": "#e00000"},
+    {"type": "circle", "at": [1249, 700], "r": 34, "label": "PSU -V", "label_pos": "s", "color": "#0050ff"},
+    {"type": "circle", "at": [218, 460], "r": 32, "color": "#e00000"},
+    {"type": "circle", "at": [756, 432], "r": 32, "color": "#0050ff"},
+    {"type": "wire", "points": [[1365,693],[1365,200],[218,200],[218,460]], "color": "#e00000", "label": "RD 1.0sq  +24V", "arrow": true},
+    {"type": "wire", "points": [[1249,700],[1249,250],[756,250],[756,432]], "color": "#0050ff", "label": "BU 1.0sq  0V", "arrow": true},
+    {"type": "marker", "at": [150, 460], "n": 1, "label": ""},
+    {"type": "marker", "at": [700, 380], "n": 2},
+    {"type": "box", "xy": [170, 380, 905, 830], "label": "X1 단자대 (1~6: 신호 / 7~8: 0V)", "color": "#ff8800"}
+  ],
+  "legend": [
+    {"color": "#e00000", "text": "① PSU +V → X1-1 상단 나사 (적색 1.0sq)"},
+    {"color": "#0050ff", "text": "② PSU -V → X1-7 상단 나사 (청색 1.0sq)"}
+  ]
+}
